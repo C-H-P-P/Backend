@@ -25,5 +25,6 @@ EXPOSE 8000
 # Робоча директорія — mysite
 WORKDIR /app/mysite
 
-# Запуск через абсолютний шлях, щоб точно знайшов скрипт
-CMD ["sh", "-c", "/app/wait-for-db.sh python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+# ВИДАЛЕНО: 'python manage.py migrate' з CMD. 
+# Запускаємо лише runserver, міграції виконаємо через docker-compose.yml
+CMD ["sh", "-c", "/app/wait-for-db.sh python manage.py runserver 0.0.0.0:8000"]
