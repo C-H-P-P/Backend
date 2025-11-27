@@ -4,9 +4,9 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -19,7 +19,8 @@ services:
 
   backend:
     build: .
-    #command: sh -c "./wait-for-db.sh python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    # ВИПРАВЛЕНО: Використовуємо wait-for-db.sh для виконання міграцій перед запуском сервера
+    command: sh -c "/app/wait-for-db.sh python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
     ports:
@@ -29,7 +30,6 @@ services:
     depends_on:
       db:
         condition: service_healthy   # Чекаємо, поки БД стане здоровою!
-    # Копіюємо скрипт очікування в контейнер
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
