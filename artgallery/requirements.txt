@@ -3,7 +3,8 @@ djangorestframework
 djangorestframework-simplejwt
 dj-rest-auth==6.0.0
 django-allauth==0.63.0
-django-filter
+# Видаляємо django-filter, оскільки пошук/фільтрація перенесені на Contentful
+# django-filter 
 Pillow
 psycopg2-binary
 django-cors-headers
