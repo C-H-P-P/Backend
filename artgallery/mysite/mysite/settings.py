@@ -4,6 +4,7 @@ Django settings for mysite project.
 
 import os
 from pathlib import Path
+from datetime import timedelta # Потрібен для SIMPLE_JWT
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,13 +28,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'app',
-    'rest_framework.authtoken',
+    # 'rest_framework.authtoken', # ВИДАЛЕНО! Використовуємо JWT
     'dj_rest_auth',
     'dj_rest_auth.registration',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
-    'allauth.socialaccount',
+    # 'allauth.socialaccount', # Залишаємо, але не є критичним
 ]
 
 MIDDLEWARE = [
@@ -107,6 +108,38 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-
+# CORS (Task 1.2 AC)
 CORS_ALLOW_ALL_ORIGINS = True 
 SITE_ID = 1
+
+# REST FRAMEWORK (Task 3.1)
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.AllowAny',
+    )
+}
+
+# SIMPLE JWT (Task 3.1)
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60), 
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),    
+    'AUTH_HEADER_TYPES': ('Bearer',), 
+}
+
+
+# REST_AUTH FIX (Для вирішення ImproperlyConfigured)
+REST_AUTH = {
+    'USE_JWT': True, # Говоримо dj-rest-auth використовувати JWT
+    'JWT_AUTH_COOKIE': 'access',
+    'JWT_AUTH_REFRESH_COOKIE': 'refresh',
+}
+
+# Налаштування allauth для використання email
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_EMAIL_VERIFICATION = 'none'
