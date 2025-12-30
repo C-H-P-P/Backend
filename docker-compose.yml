@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # === DATABASE ===
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"  # Якщо у тебе зайнятий порт, зміни першу цифру (напр. "5433:5432")
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # === BACKEND (Django) ===
+  backend:
+    build: ./backend  # ⚠️ Шлях до папки backend
+    # Скрипт запуску: чекаємо БД -> міграції -> запуск сервера
+    command: sh -c "/app/wait-for-db.sh python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env  # ⚠️ Файл .env має бути всередині папки backend
+    depends_on:
+      db:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # === FRONTEND (React) ===
+  frontend:
+    build: ./frontend # ⚠️ Шлях до папки frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Щоб локальна папка не затирала node_modules контейнера
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000 # Змінна для React, куди стукати на бекенд
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
