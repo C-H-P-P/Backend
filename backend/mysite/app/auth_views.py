@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 from django.contrib.auth import authenticate, get_user_model
-from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework import serializers, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
+
 from mysite.authentication import build_minimal_jwt
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ("id", "username", "email", "first_name", "last_name")
 
 
 class MinimalLoginView(APIView):
@@ -77,16 +83,15 @@ class MinimalRegisterView(APIView):
         return Response({"access": token}, status=status.HTTP_201_CREATED)
 
 
-
-
 class UserDetailView(APIView):
     """
     Повертає дані поточного авторизованого користувача.
     Вимагає заголовок: Authorization: Bearer <token>
     """
-    permission_classes = [IsAuthenticated] # Тільки для тих, хто має токен
+
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         # request.user автоматично підставляється завдяки твоєму MinimalJWTAuthentication
         serializer = UserSerializer(request.user)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
