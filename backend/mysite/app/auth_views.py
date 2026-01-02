@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 from django.contrib.auth import authenticate, get_user_model
-from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework import serializers, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
+
 from mysite.authentication import build_minimal_jwt
 
 
-class MinimalLoginView(APIView):
-    """Login that returns a *minimal* JWT (only userId + exp)."""
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ("id", "username", "email", "first_name", "last_name")
 
+
+class MinimalLoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -36,14 +40,6 @@ class MinimalLoginView(APIView):
 
 
 class MinimalRegisterView(APIView):
-    """Register that returns a *minimal* JWT (only userId + exp).
-
-    Accepts either:
-      - username, password
-    or
-      - username, password1, password2
-    """
-
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -51,6 +47,9 @@ class MinimalRegisterView(APIView):
         email = request.data.get("email")
         password = request.data.get("password") or request.data.get("password1")
         password2 = request.data.get("password2")
+
+        first_name = request.data.get("first_name", "")
+        last_name = request.data.get("last_name", "")
 
         if not username or not password:
             return Response(
@@ -71,22 +70,21 @@ class MinimalRegisterView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        user = User.objects.create_user(username=username, email=email, password=password)
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+        )
 
         token = build_minimal_jwt(user)
         return Response({"access": token}, status=status.HTTP_201_CREATED)
 
 
-
-
 class UserDetailView(APIView):
-    """
-    Повертає дані поточного авторизованого користувача.
-    Вимагає заголовок: Authorization: Bearer <token>
-    """
-    permission_classes = [IsAuthenticated] # Тільки для тих, хто має токен
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # request.user автоматично підставляється завдяки твоєму MinimalJWTAuthentication
         serializer = UserSerializer(request.user)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
